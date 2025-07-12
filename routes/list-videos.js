@@ -1,87 +1,3 @@
-// import { Router } from "express";
-// import { S3Client, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
-// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-// import { fromEnv } from "@aws-sdk/credential-providers";
-
-// const router = Router();
-
-// const s3 = new S3Client({
-//   region: process.env.AWS_REGION,
-//   credentials: fromEnv(),
-// });
-
-// router.get("/videos", async (req, res) => {
-//   const folder = req.query.folder || "recording-videos";
-//   const prefix = `${folder}/`;
-
-//   try {
-//     const listCommand = new ListObjectsV2Command({
-//       Bucket: process.env.AWS_BUCKET,
-//       Prefix: prefix,
-//     });
-
-//     const { Contents } = await s3.send(listCommand);
-
-//     if (!Contents || Contents.length === 0) {
-//       return res.send("<h3>No videos found.</h3>");
-//     }
-
-//     // Get signed URLs for each file
-//     const urls = await Promise.all(
-//       Contents.map(async (file) => {
-//         const getCmd = new GetObjectCommand({
-//           Bucket: process.env.AWS_BUCKET,
-//           Key: file.Key,
-//         });
-
-//         const url = await getSignedUrl(s3, getCmd, { expiresIn: 3600 });
-//         return {
-//           url,
-//           name: file.Key.split("/").pop(),
-//           type: file.Key.endsWith(".mp4") ? "video/mp4" : "video/webm",
-//         };
-//       })
-//     );
-
-//     const html = `
-//       <html>
-//         <head>
-//           <title>Uploaded Videos</title>
-//           <style>
-//             body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
-//             video { width: 100%; max-width: 600px; margin-bottom: 40px; display: block; }
-//             h2 { margin-top: 40px; }
-//           </style>
-//         </head>
-//         <body>
-//           <h1>Uploaded Videos</h1>
-//           ${urls
-//             .map(
-//               ({ url, name, type }) => `
-//               <div>
-//                 <h2>${name}</h2>
-//                 <video controls>
-//                   <source src="${url}" type="${type}">
-//                   Your browser does not support the video tag.
-//                 </video>
-//               </div>`
-//             )
-//             .join("")}
-//         </body>
-//       </html>
-//     `;
-
-//     res.send(html);
-//   } catch (err) {
-//     console.error("List videos error:", err);
-//     res.status(500).send("Error listing videos");
-//   }
-// });
-
-// export default router;
-
-
-
 import { Router } from "express";
 import {
   S3Client,
@@ -114,10 +30,8 @@ router.get("/videos", async (req, res) => {
 
     if (!Contents?.length) return res.send("<h3>No videos found.</h3>");
 
-    /* 2️⃣  build table rows with signed URLs (+ file meta) */
     const rows = await Promise.all(
       Contents.map(async ({ Key, Size, LastModified }) => {
-        // one signed URL to STREAM/PLAY (1 h) …
         const playUrl = await getSignedUrl(
           s3,
           new GetObjectCommand({
@@ -126,7 +40,6 @@ router.get("/videos", async (req, res) => {
           }),
           { expiresIn: 3600 }
         );
-        // …and one to FORCE download (add `response-content-disposition`)
         const downloadUrl = await getSignedUrl(
           s3,
           new GetObjectCommand({
@@ -138,6 +51,7 @@ router.get("/videos", async (req, res) => {
         );
 
         return {
+          Key,
           name: Key.split("/").pop(),
           size: (Size / 1024 / 1024).toFixed(1) + " MB",
           date: new Date(LastModified).toLocaleString(),
@@ -148,8 +62,7 @@ router.get("/videos", async (req, res) => {
       })
     );
 
-    /* 3️⃣  render HTML */
-    const html = /*html*/ `
+    const html =`
       <!doctype html>
       <html>
         <head>
@@ -162,6 +75,7 @@ router.get("/videos", async (req, res) => {
             th     { background:#f0f0f0; }
             button { padding:6px 12px; cursor:pointer; }
             video  { width:100%; max-height:480px; margin-top:12px; outline:1px solid #ddd; }
+            a      { text-decoration: none;}
           </style>
         </head>
         <body>
@@ -170,7 +84,7 @@ router.get("/videos", async (req, res) => {
           <table>
             <thead>
               <tr>
-                <th>Name</th><th>Size</th><th>Date</th><th>Play</th><th>Download</th>
+                <th>Name</th><th>Size</th><th>Date</th><th>Play</th><th>Download</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -190,7 +104,14 @@ router.get("/videos", async (req, res) => {
                         </video>
                       </div>
                     </td>
-                    <td><a href="${r.downloadUrl}">⬇️ Download</a></td>
+                    <td>
+                      <button>
+                        <a role="button" href="${r.downloadUrl}">⬇️ Download</a>
+                      </button>
+                    </td>
+                    <td>
+                      <button>🧨 Delete</button>
+                    </td>
                   </tr>`
                 )
                 .join("")}
@@ -201,6 +122,12 @@ router.get("/videos", async (req, res) => {
             function toggle(idx){
               const div = document.getElementById('player-'+idx);
               div.style.display = div.style.display==='none' ? 'block':'none';
+            }
+            async function del(encodedKey){
+              if(!confirm('Really delete this file?')) return;
+              const res = await fetch('/videos/'+encodedKey, { method:'DELETE' });
+              if(res.ok){ location.reload(); }
+              else      { alert('Delete failed'); }
             }
           </script>
         </body>
