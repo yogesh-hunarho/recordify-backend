@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Uninstall Feedback</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    .reason-list label {
+      display: block;
+      margin: 8px 0;
+    }
+    textarea, input[type="email"] {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 20px;
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>😢 Sorry to see you go</h1>
+  <p>Please help us improve by sharing your feedback below:</p>
+  <form id="feedbackForm">
+    <div class="reason-list">
+      <label><input type="checkbox" name="reasons" value="Not enough features"> Not enough features</label>
+      <label><input type="checkbox" name="reasons" value="Don't need it anymore"> Don't need it anymore</label>
+      <label><input type="checkbox" name="reasons" value="Technical issues or bugs"> Technical issues or bugs</label>
+      <label><input type="checkbox" name="reasons" value="Prefer old version"> I prefer the old version</label>
+      <label><input type="checkbox" name="reasons" value="Other"> Other</label>
+    </div>
+
+    <textarea name="improvements" placeholder="What can we do to improve?" rows="4"></textarea>
+    <input type="email" name="email" placeholder="Your email (optional)" />
+
+    <button type="submit">Thanks a lot!</button>
+  </form>
+
+  <script>
+    document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const reasons = [...form.querySelectorAll("input[name='reasons']:checked")].map(cb => cb.value);
+      const improvements = form.improvements.value;
+      const email = form.email.value;
+
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reasons, improvements, email })
+      });
+
+      const data = await res.json();
+      alert(data.message || "Thanks for your feedback!");
+      form.reset();
+    });
+  </script>
+</body>
+</html>

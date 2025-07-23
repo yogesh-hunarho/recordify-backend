@@ -84,7 +84,7 @@ router.get("/videos", async (req, res) => {
           <table>
             <thead>
               <tr>
-                <th>Name</th><th>Size</th><th>Date</th><th>Play</th><th>Download</th><th>Action</th>
+                <th>Name</th><th>Size</th><th>Date</th><th>Play</th><th>Download</th>
               </tr>
             </thead>
             <tbody>
@@ -108,9 +108,6 @@ router.get("/videos", async (req, res) => {
                       <button>
                         <a role="button" href="${r.downloadUrl}">⬇️ Download</a>
                       </button>
-                    </td>
-                    <td>
-                      <button>🧨 Delete</button>
                     </td>
                   </tr>`
                 )
