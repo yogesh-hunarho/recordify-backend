@@ -6,6 +6,7 @@ const UserSettingsSchema = new mongoose.Schema({
   batchID: Number,
   teacherID:Number,
   userAgent: String,
+  availableRam:String,
   platformInfo: {
     arch: String,
     nacl_arch: String,
