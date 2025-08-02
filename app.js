@@ -6,8 +6,14 @@ import mongoose from 'mongoose'
 
 import uploadRoutes from "./routes/upload.js";
 import listVideosRoute from "./routes/list-videos.js";
+import AutouploadVideo from "./routes/list-merge-video.js"
 import userSettingsRoutes from "./routes/user-settings.js";
+import SessionList from "./routes/session-list.js"
 import feedbackRoutes from "./routes/feedback.js";
+import uploadChunkRoute from "./routes/upload-chunk.js"
+import mergeChunk from "./routes/merge-chunks.js"
+import ForceMergeVideo from "./routes/force-merge-video.js"
+import deleteChunk from "./routes/delete-chunk.js"
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -22,9 +28,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"))
 app.use("/api", uploadRoutes);
-app.use("/", listVideosRoute);
 app.use("/api", userSettingsRoutes);
 app.use("/api", feedbackRoutes);
+app.use("/api",uploadChunkRoute);
+app.use("/api",mergeChunk);
+app.use("/api",deleteChunk)
+app.use("/", listVideosRoute);
+app.use("/",AutouploadVideo);
+app.use("/",SessionList)
+app.use("/",ForceMergeVideo)
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

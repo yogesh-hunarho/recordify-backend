@@ -3,7 +3,6 @@ import {
   S3Client,
   ListObjectsV2Command,
   GetObjectCommand,
-  HeadObjectCommand
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { fromEnv } from "@aws-sdk/credential-providers";
@@ -15,9 +14,8 @@ const s3 = new S3Client({
   credentials: fromEnv(),
 });
 
-router.get("/videos", async (req, res) => {
-  const folder = req.query.folder || "recording-videos";
-  const prefix = `${folder}/`;
+router.get("/auto-upload", async (req, res) => {
+  const prefix = `merged-videos/`;
 
   try {
     const { Contents } = await s3.send(
@@ -27,7 +25,9 @@ router.get("/videos", async (req, res) => {
       })
     );
 
-    if (!Contents?.length) return res.send("<h3>No videos found.</h3>");
+    if (!Contents?.length) {
+      return res.send("<h3>No videos found.</h3>");
+    }
 
     const rows = await Promise.all(
       Contents.map(async ({ Key, Size, LastModified }) => {
@@ -45,7 +45,7 @@ router.get("/videos", async (req, res) => {
           new GetObjectCommand({
             Bucket: process.env.AWS_BUCKET,
             Key,
-            ResponseContentDisposition: `attachment; filename="${Key.split("/").pop()}"`,
+            ResponseContentDisposition: `attachment; filename="${Key.split("/").pop()}"`
           }),
           { expiresIn: 3600 }
         );
@@ -67,15 +67,16 @@ router.get("/videos", async (req, res) => {
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>Uploaded Videos</title>
+          <title>Merged Videos</title>
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body class="bg-gray-100 text-gray-800 p-6">
           <div class="max-w-7xl mx-auto">
-            <h1 class="text-3xl font-bold mb-6">Uploaded Videos (${rows.length})</h1>
+            <h1 class="text-3xl font-bold mb-6">Merged Videos (${rows.length})</h1>
+
             <div class="flex gap-4 mb-6">
-              <a href="/auto-upload" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Auto Upload</a>
-              <a href="/session" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">See Sessions</a>
+              <a href="/videos" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">AWS Uploads</a>
+              <a href="/session" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Sessions</a>
               <a href="/force-merge" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Force Merge</a>
             </div>
 
@@ -90,7 +91,7 @@ router.get("/videos", async (req, res) => {
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Download</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="bg-white divide-y divide-gray-100">
                   ${rows
                     .map(
                       (r, i) => `
@@ -119,8 +120,8 @@ router.get("/videos", async (req, res) => {
           </div>
 
           <script>
-            function toggle(idx) {
-              const div = document.getElementById('player-' + idx);
+            function toggle(idx){
+              const div = document.getElementById('player-'+idx);
               div.classList.toggle('hidden');
             }
           </script>
@@ -134,5 +135,6 @@ router.get("/videos", async (req, res) => {
     res.status(500).send("Error listing videos");
   }
 });
+
 
 export default router;

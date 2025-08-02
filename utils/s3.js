@@ -21,19 +21,3 @@ export const getPresignedUrl = async (filename, contentType) => {
   const url = await getSignedUrl(s3, command, { expiresIn: 60 * 30 });
   return { url, key };
 };
-
-// this is for webm video 
-// export const getPresignedUrl = async (filename) => {
-//     const key = `recording-videos/${new Date().toISOString().split('T')[0]}/${uuidv4()}-${filename}`;  
-
-//     const command = new PutObjectCommand({
-//         Bucket: process.env.AWS_BUCKET,
-//         Key: key,
-//         ContentType: "video/webm; codecs=vp8, opus"
-//     });
-
-//     // 30-minute URL
-//     const url = await getSignedUrl(s3, command, { expiresIn: 60 * 30 });
-
-//     return { url, key };
-// };
