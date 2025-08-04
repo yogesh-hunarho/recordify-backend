@@ -224,10 +224,10 @@ class VideoHandler {
       console.log("✅ Video uploaded to S3:", s3Url);
 
       console.log("💾 Saving to database...");
-      // await this.saveToDatabase(batchSessionId, batchId, teacherId, s3Url, duration);
+      await this.saveToDatabase(batchSessionId, batchId, teacherId, s3Url, duration);
 
       console.log("🌐 Calling external API...");
-      // await this.callExternalAPI(batchSessionId, batchId, teacherId, s3Url, duration);
+      await this.callExternalAPI(batchSessionId, batchId, teacherId, s3Url, duration);
       console.log("✅ External API called successfully");
 
       console.log("🧹 Cleaning up temporary files...");
